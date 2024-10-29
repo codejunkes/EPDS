@@ -1,0 +1,35 @@
+from cryptography.hazmat.primitives.kdf.pbkdf2 import PBKDF2HMAC
+from cryptography.hazmat.primitives import hashes
+from cryptography.hazmat.backends import default_backend
+from cryptography.fernet import Fernet
+import base64
+
+# Get password from user
+password = input("Enter the password: ").encode()
+
+# Load the salt and key from the file
+with open('test/key.key', 'rb') as key_file:
+    salt = key_file.read(16)
+    key = key_file.read(32)
+
+# Derive the key from the password
+kdf = PBKDF2HMAC(
+    algorithm=hashes.SHA256(),
+    length=32,
+    salt=salt,
+    iterations=100000,
+    backend=default_backend()
+)
+derived_key = base64.urlsafe_b64encode(kdf.derive(password))
+cipher_suite = Fernet(derived_key)
+
+# Read the encrypted file
+with open('test/encrypted_file.txt', 'rb') as file:
+    encrypted_data = file.read()
+
+# Decrypt the file data
+decrypted_data = cipher_suite.decrypt(encrypted_data)
+
+# Write the decrypted data to a new file
+with open('test/decrypted_file.mp3', 'wb') as file:
+    file.write(decrypted_data)
